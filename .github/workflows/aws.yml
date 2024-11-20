@@ -10,18 +10,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # Step 1: Deploy using SSH
     - name: Deploy via SSH
       env:
         EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
-        EC2_HOST: ${{ secrets.EC2_HOST }}
+        EC2_HOST: "ec2-13-201-188-227.ap-south-1.compute.amazonaws.com"
+        EC2_USER: "ubuntu"
       run: |
-        echo "$EC2_SSH_KEY" > ssh_key.pem
-        chmod 600 ssh_key.pem
-        ssh -o StrictHostKeyChecking=no -i ssh_key.pem root@$EC2_HOST << 'EOF'
-          cd /root/github/nodeapp
+        # Save the private key to a file
+        echo "$EC2_SSH_KEY" > blasbloom.pem
+        chmod 600 blasbloom.pem
+
+        # Connect to the EC2 instance and deploy
+        ssh -T -i blasbloom.pem $EC2_USER@$EC2_HOST << 'EOF'
+          # Navigate to your project directory or clone the repository
+          mkdir -p /var/www/nodeapp
+          cd /var/www/nodeapp
+          git init
+          git remote add origin https://github.com/Aryanks/nodeapp.git || true
           git pull origin main
+
+          # Install dependencies and run the app
           npm install
-          node server.js &
+          pm2 stop all || true
+          pm2 start server.js --name nodeapp
         EOF
-        rm -f ssh_key.pem
+
+        # Cleanup
+        rm -f blasbloom.pem
+
