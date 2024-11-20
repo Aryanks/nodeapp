@@ -17,8 +17,11 @@ jobs:
       env:
         EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}  # GitHub secret for private key
         EC2_HOST: ec2-13-201-188-227.ap-south-1.compute.amazonaws.com  # Your EC2 instance address
-        EC2_USER: root  # Use root user for SSH
+        EC2_USER: ubuntu  # Use ubuntu user for SSH (not root)
       run: |
+        # Install OpenSSH Client (ensure it's available)
+        sudo apt-get install -y openssh-client
+
         # Create the .ssh directory and set permissions
         mkdir -p ~/.ssh
         chmod 700 ~/.ssh
@@ -30,8 +33,15 @@ jobs:
         # Add the EC2 host to known_hosts to prevent SSH warning
         ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
 
-        # SSH into EC2 and deploy
-        ssh -T -i ~/.ssh/id_rsa $EC2_USER@$EC2_HOST << 'EOF'
+        # Use ssh-agent to load the private key
+        eval $(ssh-agent -s)
+        ssh-add ~/.ssh/id_rsa
+
+        # SSH into EC2 and deploy as ubuntu user, then switch to root
+        ssh -o StrictHostKeyChecking=no -T $EC2_USER@$EC2_HOST << 'EOF'
+          # Switch to root user
+          sudo su -
+
           # Navigate to the app directory (create if not exists)
           cd /root/github/nodeapp || mkdir -p /root/github/nodeapp
           cd /root/github/nodeapp
