@@ -1,0 +1,27 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Deploy using SSH
+    - name: Deploy via SSH
+      env:
+        EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+      run: |
+        echo "$EC2_SSH_KEY" > ssh_key.pem
+        chmod 600 ssh_key.pem
+        ssh -o StrictHostKeyChecking=no -i ssh_key.pem root@$EC2_HOST << 'EOF'
+          cd /path/to/your/project
+          git pull origin main
+          npm install
+          node server.js &
+        EOF
+        rm -f ssh_key.pem
