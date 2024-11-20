@@ -16,20 +16,17 @@ jobs:
         EC2_HOST: "ec2-13-201-188-227.ap-south-1.compute.amazonaws.com"
         EC2_USER: "ubuntu"
       run: |
-        # Save the private key to a fileee
+        # Save the private key to a file
         echo "$EC2_SSH_KEY" > blasbloom.pem
         chmod 600 blasbloom.pem
 
-        # Connect to the EC2 instance and deploy
-        ssh -T -i blasbloom.pem $EC2_USER@$EC2_HOST << 'EOF'
-          # Navigate to your project directory or clone the repository
-          mkdir -p /var/www/nodeapp
-          cd /var/www/nodeapp
-          git init
-          git remote add origin https://github.com/Aryanks/nodeapp.git || true
-          git pull origin main
+        # Add host key to known_hosts
+        ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
 
-          # Install dependencies and run the app
+        # Connect to EC2 and deploy
+        ssh -T -i blasbloom.pem $EC2_USER@$EC2_HOST << 'EOF'
+          cd /var/www/nodeapp
+          git pull origin main
           npm install
           pm2 stop all || true
           pm2 start server.js --name nodeapp
