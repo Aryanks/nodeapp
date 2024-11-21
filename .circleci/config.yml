@@ -3,7 +3,7 @@ version: 2.1
 executors:
   node-executor:
     docker:
-      - image: circleci/python:3.8  # You can use any base image; this is just an example.
+      - image: circleci/python:3.8  # You can use any base image
     working_directory: ~/repo
 
 jobs:
@@ -31,7 +31,7 @@ jobs:
       - run:
           name: SSH into EC2 and Deploy
           command: |
-            ssh -o StrictHostKeyChecking=no -i ~/ec2_key.pem ubuntu@$EC2_HOST << 'EOF'
+            ssh -o StrictHostKeyChecking=no -i ~/ec2_key.pem ubuntu@$EC2_HOST << EOF
               # Switch to root user
               sudo su -
 
@@ -51,7 +51,7 @@ jobs:
               # Restart the Node.js app using pm2
               pm2 stop all || true  # Stop any previous instances
               pm2 start server.js --name nodeapp  # Start the app with pm2
-            EOF  # Close the here-document
+            EOF
 
 workflows:
   version: 2
