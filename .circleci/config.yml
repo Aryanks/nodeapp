@@ -1,0 +1,61 @@
+version: 2.1
+
+executors:
+  node-executor:
+    docker:
+      - image: circleci/python:3.8  # Choose an image you like. This is a basic example.
+    working_directory: ~/repo
+
+jobs:
+  deploy:
+    executor: node-executor
+    steps:
+      - checkout  # This checks out the code from the repository
+
+      - run:
+          name: Install SSH client
+          command: sudo apt-get install -y openssh-client  # Install SSH client for connecting to EC2
+
+      - run:
+          name: Add SSH Key to CircleCI
+          command: |
+            echo "$EC2_SSH_KEY" > ~/ec2_key.pem  # Save private key to a file
+            chmod 600 ~/ec2_key.pem  # Ensure it's secure
+
+      - run:
+          name: Add EC2 Host to Known Hosts
+          command: |
+            mkdir -p ~/.ssh  # Make sure the SSH directory exists
+            ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts  # Prevent host verification issues
+
+      - run:
+          name: SSH into EC2 and Deploy
+          command: |
+            ssh -o StrictHostKeyChecking=no -i ~/ec2_key.pem ubuntu@$EC2_HOST << 'EOF'
+              # Switch to root user
+              sudo su -
+
+              # Navigate to the app directory or create it
+              cd /root/github/nodeapp || mkdir -p /root/github/nodeapp
+              cd /root/github/nodeapp
+
+              # Pull the latest code
+              git pull origin main
+
+              # Install Node.js dependencies
+              npm install
+
+              # Install pm2 globally if not installed
+              npm install -g pm2
+
+              # Restart the Node.js app using pm2
+              pm2 stop all || true  # Stop previous instances
+              pm2 start server.js --name nodeapp  # Start the app with pm2
+            EOF
+
+workflows:
+  version: 2
+  deploy:
+    jobs:
+      - deploy
+
