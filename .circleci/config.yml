@@ -3,7 +3,7 @@ version: 2.1
 executors:
   node-executor:
     docker:
-      - image: circleci/python:3.8  # You can use any base image
+      - image: circleci/python:3.8  # Base image, can use other images
     working_directory: ~/repo
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
           name: Add SSH Key to CircleCI
           command: |
             echo "$EC2_SSH_KEY" > ~/ec2_key.pem  # Save private key to a file
-            chmod 600 ~/ec2_key.pem  # Make sure it's readable only by the current user
+            chmod 600 ~/ec2_key.pem  # Set permissions for the private key
 
       - run:
           name: Add EC2 Host to Known Hosts
