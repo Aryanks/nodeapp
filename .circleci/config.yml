@@ -50,7 +50,7 @@ jobs:
 
               # Restart the Node.js app using pm2
               pm2 stop all || true  # Stop previous instances
-              pm2 start server.js --name nodeapp  # Start the app with pm2
+              pm2 start server.js --name nodeapp  # Start the app withe pm2
             EOF
 
 workflows:
